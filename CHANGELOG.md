@@ -15,6 +15,7 @@ Both packages (`things-api` and `things-sdk`) are versioned together.
 ### Fixed
 - UUID generation now emits canonical 16-byte base58 ids. The previous generator picked 22 random alphabet characters, which often decode to the wrong length and crash Things.app on pull (`decodeBase58String`). Those ids cannot be repaired, because cloud history is append-only.
 - Notes are now sent with ``nt.ch`` set to the CRC32 of the UTF-8 text. Sending ``ch=0`` for a non-empty note makes the iPhone app treat it as corrupt and wipe it.
+- ``ThingsCloudClient.commit`` now refuses unsafe items (non-canonical ids, bad note checksums, and a few other official-client invariants) before they are sent. Cloud writes can be frozen by setting ``THINGS_WRITE_FREEZE`` to a file path and creating that file.
 
 ---
 
