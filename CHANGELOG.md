@@ -10,6 +10,13 @@ Both packages (`things-api` and `things-sdk`) are versioned together.
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- UUID generation now emits canonical 16-byte base58 ids. The previous generator picked 22 random alphabet characters, which often decode to the wrong length and crash Things.app on pull (`decodeBase58String`). Those ids cannot be repaired, because cloud history is append-only.
+
+---
+
 ## [0.3.3] — 2026-04-28
 
 ### Added

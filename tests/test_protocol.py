@@ -15,7 +15,13 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from things_sdk import Base, Tag, Task, TaskService, configure_sync
-from things_sdk.cloud.protocol import BASE58_ALPHABET, generate_uuid, is_valid_things_uuid
+from things_sdk.cloud.protocol import (
+    BASE58_ALPHABET,
+    _b58decode,
+    _b58encode,
+    generate_uuid,
+    is_valid_things_uuid,
+)
 from things_sdk.cloud.sync import _tag_delete_wire, _tag_to_wire, _task_to_wire
 from things_sdk.tags import TagService
 
@@ -77,6 +83,25 @@ class TestUUIDFormat:
         assert not is_valid_things_uuid("f5d02f3cb15449fa816518")  # hex with '0'
         assert not is_valid_things_uuid("abc")  # too short
         assert not is_valid_things_uuid("0" * 22)  # all zeros
+
+    def test_generated_uuid_decodes_to_exactly_16_bytes(self):
+        for _ in range(200):
+            u = generate_uuid()
+            raw = _b58decode(u)
+            assert raw is not None and len(raw) == 16
+            assert _b58encode(raw) == u
+            assert is_valid_things_uuid(u)
+            assert len(u) == 22
+
+    def test_real_things_uuid_decodes_to_16_bytes(self):
+        raw = _b58decode("CK9dARrf2ezbFvrVUUxkHE")
+        assert raw is not None and len(raw) == 16
+
+    def test_is_valid_rejects_wrong_payload_size(self):
+        """Canonical means encode(decode(s)) == s and the payload is 16 bytes."""
+        assert not is_valid_things_uuid("1" * 22)  # 22 zero bytes, not 16
+        assert not is_valid_things_uuid(_b58encode(bytes([1]) * 17))
+        assert not is_valid_things_uuid(_b58encode(bytes([255]) * 15))
 
     @pytest.mark.asyncio
     async def test_task_service_creates_base58_uuid(self, session):
